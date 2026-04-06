@@ -26,18 +26,25 @@ export interface AuthResponse {
   user: User;
 }
 
+// Safe wrapper — returns null on server (SSR), real storage on client
+const isBrowser = () => typeof window !== 'undefined';
+
 export const authService = {
   async login(data: LoginData): Promise<AuthResponse> {
     const response = await api.post<AuthResponse>('/api/auth/login', data);
-    localStorage.setItem('token', response.data.token);
-    localStorage.setItem('user', JSON.stringify(response.data.user));
+    if (isBrowser()) {
+      localStorage.setItem('token', response.data.token);
+      localStorage.setItem('user', JSON.stringify(response.data.user));
+    }
     return response.data;
   },
 
   async register(data: RegisterData): Promise<AuthResponse> {
     const response = await api.post<AuthResponse>('/api/auth/register', data);
-    localStorage.setItem('token', response.data.token);
-    localStorage.setItem('user', JSON.stringify(response.data.user));
+    if (isBrowser()) {
+      localStorage.setItem('token', response.data.token);
+      localStorage.setItem('user', JSON.stringify(response.data.user));
+    }
     return response.data;
   },
 
@@ -47,17 +54,21 @@ export const authService = {
   },
 
   logout() {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
-    window.location.href = '/login';
+    if (isBrowser()) {
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      window.location.href = '/login';
+    }
   },
 
   getStoredUser(): User | null {
+    if (!isBrowser()) return null;
     const userStr = localStorage.getItem('user');
     return userStr ? JSON.parse(userStr) : null;
   },
 
   isAuthenticated(): boolean {
+    if (!isBrowser()) return false;
     return !!localStorage.getItem('token');
   },
 };

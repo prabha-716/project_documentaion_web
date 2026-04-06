@@ -1,172 +1,130 @@
-import { useState, FormEvent, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import { authService } from '@/lib/auth';
-import { projectService, ProjectRequest, Project } from '@/lib/project';
+import { projectService, Project } from '@/lib/project';
 
-export default function EditProject() {
+export default function ViewProject() {
   const router = useRouter();
   const { id } = router.query;
-  const [formData, setFormData] = useState<ProjectRequest>({
-    title: '',
-    description: '',
-    usedTechs: '',
-    filePath: '',
-    githubLink: '',
-    documents: '',
-  });
+  const [project, setProject] = useState<Project | null>(null);
   const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [error, setError] = useState('');
 
   useEffect(() => {
-    if (!authService.isAuthenticated()) {
-      router.push('/login');
-      return;
-    }
-
-    if (id) {
-      loadProject();
-    }
+    if (!authService.isAuthenticated()) { router.push('/login'); return; }
+    if (id) loadProject();
   }, [id, router]);
 
   const loadProject = async () => {
     try {
-      const project = await projectService.getProjectById(Number(id));
-      setFormData({
-        title: project.title,
-        description: project.description || '',
-        usedTechs: project.usedTechs || '',
-        filePath: project.filePath || '',
-        githubLink: project.githubLink || '',
-        documents: project.documents || '',
-      });
-    } catch (err) {
-      setError('Failed to load project');
-    } finally {
-      setLoading(false);
-    }
+      const data = await projectService.getProjectById(Number(id));
+      setProject(data);
+    } catch { console.error('Failed to load project'); }
+    finally { setLoading(false); }
   };
 
-  const handleSubmit = async (e: FormEvent) => {
-    e.preventDefault();
-    setError('');
-    setSaving(true);
-
-    try {
-      await projectService.updateProject(Number(id), formData);
-      router.push('/dashboard');
-    } catch (err: any) {
-      setError(err.response?.data?.message || 'Failed to update project');
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+  if (loading) return (
+      <div className="min-h-screen bg-[#111110] flex items-center justify-center">
+        <div className="w-8 h-8 border-2 border-stone-700 border-t-amber-500 rounded-full animate-spin" />
       </div>
-    );
-  }
+  );
+
+  if (!project) return (
+      <div className="min-h-screen bg-[#111110] flex items-center justify-center text-center">
+        <div>
+          <p className="text-stone-500 mb-4">Project not found</p>
+          <button onClick={() => router.push('/dashboard')}
+                  className="bg-amber-500 text-black px-4 py-2 rounded-xl text-sm font-medium hover:bg-amber-400 transition-colors">
+            Back to Dashboard
+          </button>
+        </div>
+      </div>
+  );
 
   return (
-    <div className="min-h-screen bg-gray-100">
-      <header className="bg-white shadow">
-        <div className="max-w-7xl mx-auto px-4 py-4 sm:px-6 lg:px-8">
-          <h1 className="text-2xl font-bold">Edit Project</h1>
+      <div className="min-h-screen bg-[#111110] text-stone-100">
+        <div className="bg-[#1C1C1A] border-b border-stone-800 px-6 py-6">
+          <div className="max-w-4xl mx-auto">
+            <button onClick={() => router.push('/dashboard')}
+                    className="text-xs text-stone-500 hover:text-amber-400 mb-4 block transition-colors">
+              ← Dashboard
+            </button>
+            <h1 className="text-2xl font-semibold tracking-tight">{project.title}</h1>
+            <p className="text-stone-500 text-sm mt-1">
+              by {project.ownerName} · Created {new Date(project.createdDate).toLocaleDateString()}
+            </p>
+          </div>
         </div>
-      </header>
 
-      <main className="max-w-3xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
-        <div className="bg-white rounded-lg shadow p-6">
-          {error && (
-            <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
-              {error}
-            </div>
-          )}
+        <main className="max-w-4xl mx-auto px-6 py-8">
+          <div className="bg-[#1C1C1A] rounded-2xl border border-stone-800 p-6 space-y-6">
 
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium mb-1">Title *</label>
-              <input
-                type="text"
-                value={formData.title}
-                onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                required
-              />
-            </div>
+            {project.description && (
+                <div>
+                  <p className="text-xs text-stone-500 uppercase tracking-widest mb-2">Description</p>
+                  <p className="text-stone-300 text-sm leading-relaxed whitespace-pre-wrap">{project.description}</p>
+                </div>
+            )}
 
-            <div>
-              <label className="block text-sm font-medium mb-1">Description</label>
-              <textarea
-                value={formData.description}
-                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                rows={4}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
+            {project.usedTechs && (
+                <div>
+                  <p className="text-xs text-stone-500 uppercase tracking-widest mb-2">Technologies</p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {project.usedTechs.split(',').map((tech, i) => (
+                        <span key={i} className="text-xs bg-amber-950/40 text-amber-400 border border-amber-800/50 px-2.5 py-1 rounded-lg">
+                    {tech.trim()}
+                  </span>
+                    ))}
+                  </div>
+                </div>
+            )}
 
-            <div>
-              <label className="block text-sm font-medium mb-1">Technologies Used</label>
-              <input
-                type="text"
-                value={formData.usedTechs}
-                onChange={(e) => setFormData({ ...formData, usedTechs: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
+            {project.filePath && (
+                <div>
+                  <p className="text-xs text-stone-500 uppercase tracking-widest mb-2">File Path</p>
+                  <p className="text-sm text-stone-400 font-mono bg-[#111110] border border-stone-800 px-3 py-2 rounded-xl">{project.filePath}</p>
+                </div>
+            )}
 
-            <div>
-              <label className="block text-sm font-medium mb-1">File Path / Drive Path</label>
-              <input
-                type="text"
-                value={formData.filePath}
-                onChange={(e) => setFormData({ ...formData, filePath: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
+            {project.githubLink && (
+                <div>
+                  <p className="text-xs text-stone-500 uppercase tracking-widest mb-2">GitHub</p>
+                  <a href={project.githubLink} target="_blank" rel="noopener noreferrer"
+                     className="text-sm text-amber-400 hover:text-amber-300 transition-colors">
+                    {project.githubLink} →
+                  </a>
+                </div>
+            )}
 
-            <div>
-              <label className="block text-sm font-medium mb-1">GitHub Link</label>
-              <input
-                type="url"
-                value={formData.githubLink}
-                onChange={(e) => setFormData({ ...formData, githubLink: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
+            {project.documents && (
+                <div>
+                  <p className="text-xs text-stone-500 uppercase tracking-widest mb-2">Documents</p>
+                  <div className="space-y-1">
+                    {project.documents.split(',').map((doc, i) => (
+                        <a key={i} href={doc.trim()} target="_blank" rel="noopener noreferrer"
+                           className="block text-sm text-amber-400 hover:text-amber-300 transition-colors">
+                          Document {i + 1} →
+                        </a>
+                    ))}
+                  </div>
+                </div>
+            )}
 
-            <div>
-              <label className="block text-sm font-medium mb-1">Documents (URLs)</label>
-              <textarea
-                value={formData.documents}
-                onChange={(e) => setFormData({ ...formData, documents: e.target.value })}
-                rows={3}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
+            <p className="text-xs text-stone-600 pt-2 border-t border-stone-800/60">
+              Last modified {new Date(project.lastModifiedDate).toLocaleDateString()}
+            </p>
+          </div>
 
-            <div className="flex gap-3 pt-4">
-              <button
-                type="submit"
-                disabled={saving}
-                className="flex-1 bg-blue-600 text-white py-2 rounded-md hover:bg-blue-700 disabled:bg-blue-300"
-              >
-                {saving ? 'Saving...' : 'Save Changes'}
-              </button>
-              <button
-                type="button"
-                onClick={() => router.push('/dashboard')}
-                className="flex-1 bg-gray-300 text-gray-700 py-2 rounded-md hover:bg-gray-400"
-              >
-                Cancel
-              </button>
-            </div>
-          </form>
-        </div>
-      </main>
-    </div>
+          <div className="flex gap-3 mt-4">
+            <button onClick={() => router.push(`/projects/edit/${project.id}`)}
+                    className="bg-amber-500 text-black px-5 py-2.5 rounded-xl text-sm font-medium hover:bg-amber-400 transition-colors">
+              Edit Project
+            </button>
+            <button onClick={() => router.push('/dashboard')}
+                    className="bg-[#1C1C1A] border border-stone-800 text-stone-400 px-5 py-2.5 rounded-xl text-sm font-medium hover:border-stone-700 hover:text-stone-200 transition-colors">
+              Dashboard
+            </button>
+          </div>
+        </main>
+      </div>
   );
 }

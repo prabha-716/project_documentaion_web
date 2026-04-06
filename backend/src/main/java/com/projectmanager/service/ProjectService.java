@@ -14,17 +14,17 @@ import java.util.stream.Collectors;
 
 @Service
 public class ProjectService {
-    
+
     @Autowired
     private ProjectRepository projectRepository;
-    
+
     @Autowired
     private UserRepository userRepository;
-    
+
     public ProjectResponse createProject(ProjectRequest request, String userEmail) {
         User user = userRepository.findByEmail(userEmail)
                 .orElseThrow(() -> new RuntimeException("User not found"));
-        
+
         Project project = new Project();
         project.setTitle(request.getTitle());
         project.setDescription(request.getDescription());
@@ -33,59 +33,76 @@ public class ProjectService {
         project.setGithubLink(request.getGithubLink());
         project.setDocuments(request.getDocuments());
         project.setOwner(user);
-        
+        project.setIsPublic(true); // New projects are public by default
+
         Project savedProject = projectRepository.save(project);
         return mapToProjectResponse(savedProject);
     }
-    
+
     public List<ProjectResponse> getAllUserProjects(String userEmail) {
         User user = userRepository.findByEmail(userEmail)
                 .orElseThrow(() -> new RuntimeException("User not found"));
-        
+
         List<Project> projects = projectRepository.findByOwnerOrderByLastModifiedDateDesc(user);
         return projects.stream()
                 .map(this::mapToProjectResponse)
                 .collect(Collectors.toList());
     }
-    
+
     public ProjectResponse getProjectById(Long id, String userEmail) {
         User user = userRepository.findByEmail(userEmail)
                 .orElseThrow(() -> new RuntimeException("User not found"));
-        
+
         Project project = projectRepository.findByIdAndOwner(id, user)
                 .orElseThrow(() -> new RuntimeException("Project not found or access denied"));
-        
+
         return mapToProjectResponse(project);
     }
-    
+
     public ProjectResponse updateProject(Long id, ProjectRequest request, String userEmail) {
         User user = userRepository.findByEmail(userEmail)
                 .orElseThrow(() -> new RuntimeException("User not found"));
-        
+
         Project project = projectRepository.findByIdAndOwner(id, user)
                 .orElseThrow(() -> new RuntimeException("Project not found or access denied"));
-        
+
         project.setTitle(request.getTitle());
         project.setDescription(request.getDescription());
         project.setUsedTechs(request.getUsedTechs());
         project.setFilePath(request.getFilePath());
         project.setGithubLink(request.getGithubLink());
         project.setDocuments(request.getDocuments());
-        
+
         Project updatedProject = projectRepository.save(project);
         return mapToProjectResponse(updatedProject);
     }
-    
+
     public void deleteProject(Long id, String userEmail) {
         User user = userRepository.findByEmail(userEmail)
                 .orElseThrow(() -> new RuntimeException("User not found"));
-        
+
         Project project = projectRepository.findByIdAndOwner(id, user)
                 .orElseThrow(() -> new RuntimeException("Project not found or access denied"));
-        
+
         projectRepository.delete(project);
     }
-    
+
+    /**
+     * Toggle project visibility
+     */
+    public ProjectResponse toggleProjectVisibility(Long id, String userEmail, Boolean isPublic) {
+        User user = userRepository.findByEmail(userEmail)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        Project project = projectRepository.findByIdAndOwner(id, user)
+                .orElseThrow(() -> new RuntimeException("Project not found or access denied"));
+
+        project.setIsPublic(isPublic);
+        Project updatedProject = projectRepository.save(project);
+
+        return mapToProjectResponse(updatedProject);
+    }
+
     private ProjectResponse mapToProjectResponse(Project project) {
         ProjectResponse response = new ProjectResponse();
         response.setId(project.getId());
