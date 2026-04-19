@@ -1,0 +1,50 @@
+#!/bin/sh
+# Maven Wrapper script for Unix/Linux/macOS
+# Downloads Maven if not present and runs it
+
+set -e
+
+# Determine the directory of this script
+if [ -z "$MAVEN_PROJECTBASEDIR" ]; then
+  MAVEN_PROJECTBASEDIR=$(cd "$(dirname "$0")" && pwd)
+  export MAVEN_PROJECTBASEDIR
+fi
+
+WRAPPER_PROPERTIES="$MAVEN_PROJECTBASEDIR/.mvn/wrapper/maven-wrapper.properties"
+WRAPPER_JAR="$MAVEN_PROJECTBASEDIR/.mvn/wrapper/maven-wrapper.jar"
+
+# Read distribution URL from properties
+if [ -f "$WRAPPER_PROPERTIES" ]; then
+  DIST_URL=$(grep 'distributionUrl' "$WRAPPER_PROPERTIES" | cut -d'=' -f2-)
+fi
+
+DIST_URL=${DIST_URL:-"https://repo.maven.apache.org/maven2/org/apache/maven/apache-maven/3.9.6/apache-maven-3.9.6-bin.zip"}
+
+# Maven installation directory
+MAVEN_HOME="$HOME/.m2/wrapper/dists/apache-maven-3.9.6"
+
+if [ ! -d "$MAVEN_HOME" ]; then
+  echo "Downloading Maven..."
+  mkdir -p "$MAVEN_HOME"
+  TMPFILE=$(mktemp /tmp/maven-XXXXXX.zip)
+
+  if command -v curl > /dev/null 2>&1; then
+    curl -fsSL -o "$TMPFILE" "$DIST_URL"
+  elif command -v wget > /dev/null 2>&1; then
+    wget -q -O "$TMPFILE" "$DIST_URL"
+  else
+    echo "ERROR: curl or wget is required to download Maven" >&2
+    exit 1
+  fi
+
+  unzip -q -o "$TMPFILE" -d "$HOME/.m2/wrapper/dists/"
+  rm -f "$TMPFILE"
+fi
+
+# Find maven executable
+MVN_CMD=$(find "$MAVEN_HOME" -name mvn -type f 2>/dev/null | head -1)
+if [ -z "$MVN_CMD" ]; then
+  MVN_CMD="$MAVEN_HOME/bin/mvn"
+fi
+
+exec "$MVN_CMD" "$@"
