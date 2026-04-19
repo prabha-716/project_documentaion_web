@@ -6,6 +6,7 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.security.web.authentication.SimpleUrlAuthenticationSuccessHandler;
@@ -22,6 +23,9 @@ public class OAuth2LoginSuccessHandler extends SimpleUrlAuthenticationSuccessHan
     
     @Autowired
     private JwtUtil jwtUtil;
+    
+    @Value("${cors.allowed-origins}")
+    private String frontendUrl;
     
     @Override
     public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response,
@@ -51,7 +55,8 @@ public class OAuth2LoginSuccessHandler extends SimpleUrlAuthenticationSuccessHan
         String token = jwtUtil.generateToken(email);
         
         // Redirect to frontend with token
-        String targetUrl = "http://localhost:3000/oauth/callback?token=" + token;
+        String baseUrl = frontendUrl.split(",")[0].trim();
+        String targetUrl = baseUrl + "/oauth/callback?token=" + token;
         getRedirectStrategy().sendRedirect(request, response, targetUrl);
     }
 }
