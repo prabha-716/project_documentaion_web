@@ -2,7 +2,6 @@ import { useEffect, useState } from 'react';
 import { ratingService, ProjectWithRating } from '@/lib/rating';
 import Link from 'next/link';
 import { useBookmarks, BookmarkedProject } from '@/hooks/useBookmarks';
-import { Heart } from 'lucide-react';
 
 export default function GlobalProjects() {
     const [projects, setProjects] = useState<ProjectWithRating[]>([]);
@@ -164,13 +163,10 @@ export default function GlobalProjects() {
                                         <h3 className="font-semibold text-stone-100 leading-snug flex-1 pr-3">{project.title}</h3>
                                         <button
                                             onClick={() => handleBookmarkToggle(project)}
-                                            className="shrink-0 ml-2 transition-colors"
+                                            className="shrink-0 ml-2 transition-colors text-lg"
                                             title={isBookmarked(project.id) ? 'Remove bookmark' : 'Bookmark'}
                                         >
-                                            <Heart
-                                                size={18}
-                                                className={isBookmarked(project.id) ? 'fill-amber-500 text-amber-500' : 'text-stone-500 hover:text-amber-400'}
-                                            />
+                                            {isBookmarked(project.id) ? '❤️' : '♡'}
                                         </button>
                                     </div>
 

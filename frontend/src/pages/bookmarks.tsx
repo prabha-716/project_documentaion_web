@@ -2,7 +2,6 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/router';
 import { useBookmarks, BookmarkedProject } from '@/hooks/useBookmarks';
 import Link from 'next/link';
-import { Heart, Trash2 } from 'lucide-react';
 
 export default function Bookmarks() {
     const router = useRouter();
@@ -108,10 +107,10 @@ export default function Bookmarks() {
                                     <h3 className="font-semibold text-stone-100 leading-snug flex-1 pr-3">{project.title}</h3>
                                     <button
                                         onClick={() => removeBookmark(project.id)}
-                                        className="shrink-0 ml-2 text-stone-500 hover:text-red-400 transition-colors"
+                                        className="shrink-0 ml-2 text-stone-500 hover:text-red-400 transition-colors text-lg"
                                         title="Remove bookmark"
                                     >
-                                        <Trash2 size={18} />
+                                        ✕
                                     </button>
                                 </div>
 
