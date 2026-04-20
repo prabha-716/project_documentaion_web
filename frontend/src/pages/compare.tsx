@@ -2,7 +2,6 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/router';
 import { ratingService, ProjectWithRating } from '@/lib/rating';
 import Link from 'next/link';
-import { X } from 'lucide-react';
 
 export default function Compare() {
     const router = useRouter();
