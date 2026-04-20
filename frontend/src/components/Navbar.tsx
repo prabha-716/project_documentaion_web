@@ -2,16 +2,19 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import Link from 'next/link';
 import { authService } from '../lib/auth';
+import { useBookmarks } from '../hooks/useBookmarks';
 
 const navLinks = [
     { href: '/dashboard', label: 'My Projects', icon: '⊞' },
     { href: '/global-projects', label: 'Discover', icon: '✦' },
     { href: '/leaderboard', label: 'Leaderboard', icon: '◈' },
+    { href: '/bookmarks', label: 'Bookmarks', icon: '♡', badge: true }, // NEW
     { href: '/profile', label: 'Profile', icon: '◎' },
 ];
 
 export default function Navbar() {
     const router = useRouter();
+    const { bookmarks } = useBookmarks(); // NEW: Get bookmarks
     const [user, setUser] = useState<any>(null);
     const [menuOpen, setMenuOpen] = useState(false);
     const [scrolled, setScrolled] = useState(false);
@@ -90,6 +93,12 @@ export default function Navbar() {
           transform: translateX(-50%); width: 20px; height: 2px;
           background: #f59e0b; border-radius: 2px;
         }
+        .nav-link-badge {
+          display: inline-flex; align-items: center; justify-content: center;
+          min-width: 18px; height: 18px; padding: 0 4px;
+          background: #f59e0b; color: #000; font-size: 11px; font-weight: 700;
+          border-radius: 9px; margin-left: 4px; font-family: 'Syne', sans-serif;
+        }
         .nav-right { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
         .nav-new-btn {
           display: flex; align-items: center; gap: 6px; padding: 8px 16px;
@@ -146,10 +155,17 @@ export default function Navbar() {
           display: flex; align-items: center; gap: 12px; padding: 13px 16px;
           border-radius: 12px; text-decoration: none; font-size: 15px; font-weight: 500;
           color: rgba(255,255,255,0.45); transition: all 0.2s ease;
+          position: relative;
         }
         .mobile-link:hover { color: #f5f5f4; background: rgba(255,255,255,0.05); }
         .mobile-link.active { color: #f59e0b; background: rgba(245,158,11,0.10); }
         .mobile-link-icon { font-size: 18px; width: 24px; text-align: center; }
+        .mobile-link-badge {
+          display: inline-flex; align-items: center; justify-content: center;
+          min-width: 18px; height: 18px; padding: 0 4px;
+          background: #f59e0b; color: #000; font-size: 11px; font-weight: 700;
+          border-radius: 9px; margin-left: 8px; font-family: 'Syne', sans-serif;
+        }
         .mobile-divider { height: 1px; background: rgba(255,255,255,0.06); margin: 8px 0; }
         .mobile-user { display: flex; align-items: center; gap: 12px; padding: 12px 16px; margin-bottom: 8px; }
         .mobile-avatar {
@@ -205,6 +221,9 @@ export default function Navbar() {
                             >
                                 <span className="nav-link-icon">{link.icon}</span>
                                 {link.label}
+                                {link.badge && bookmarks.length > 0 && (
+                                    <span className="nav-link-badge">{bookmarks.length}</span>
+                                )}
                             </Link>
                         ))}
                     </div>
@@ -255,6 +274,9 @@ export default function Navbar() {
                     >
                         <span className="mobile-link-icon">{link.icon}</span>
                         {link.label}
+                        {link.badge && bookmarks.length > 0 && (
+                            <span className="mobile-link-badge">{bookmarks.length}</span>
+                        )}
                     </Link>
                 ))}
                 <div className="mobile-divider" />

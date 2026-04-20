@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
 import { ratingService, ProjectWithRating } from '@/lib/rating';
 import Link from 'next/link';
+import { useBookmarks, BookmarkedProject } from '@/hooks/useBookmarks';
+import { Heart } from 'lucide-react';
 
 export default function GlobalProjects() {
     const [projects, setProjects] = useState<ProjectWithRating[]>([]);
@@ -10,6 +12,8 @@ export default function GlobalProjects() {
     const [sortBy, setSortBy] = useState<'rating' | 'recent' | 'popular'>('rating');
     const [page, setPage] = useState(1);
     const [totalPages, setTotalPages] = useState(0);
+    const { isBookmarked, toggleBookmark } = useBookmarks();
+    const [selectedForComparison, setSelectedForComparison] = useState<number[]>([]);
 
     useEffect(() => { loadProjects(); }, [page]);
 
@@ -52,6 +56,32 @@ export default function GlobalProjects() {
         }
     };
 
+    const handleBookmarkToggle = (project: ProjectWithRating) => {
+        const bookmarkData: BookmarkedProject = {
+            id: project.id,
+            title: project.title,
+            ownerName: project.ownerName,
+            description: project.description,
+            averageRating: project.averageRating,
+            totalRatings: project.totalRatings,
+            usedTechs: project.usedTechs,
+            githubLink: project.githubLink,
+            timestamp: Date.now(),
+        };
+        toggleBookmark(bookmarkData);
+    };
+
+    const toggleComparison = (projectId: number) => {
+        setSelectedForComparison((prev) => {
+            if (prev.includes(projectId)) {
+                return prev.filter((id) => id !== projectId);
+            } else if (prev.length < 3) {
+                return [...prev, projectId];
+            }
+            return prev;
+        });
+    };
+
     const displayProjects = sortProjects(filteredProjects);
 
     return (
@@ -65,6 +95,28 @@ export default function GlobalProjects() {
             </div>
 
             <main className="max-w-6xl mx-auto px-6 py-8">
+                {/* Comparison banner */}
+                {selectedForComparison.length > 0 && (
+                    <div className="bg-amber-950/40 border border-amber-800/50 rounded-2xl p-4 mb-6 flex items-center justify-between">
+                        <p className="text-sm text-amber-300">
+                            {selectedForComparison.length} project{selectedForComparison.length !== 1 ? 's' : ''} selected for comparison
+                        </p>
+                        <div className="flex gap-2">
+                            <button
+                                onClick={() => setSelectedForComparison([])}
+                                className="px-3 py-1.5 text-xs bg-stone-800 text-stone-300 rounded-lg hover:bg-stone-700 transition-colors"
+                            >
+                                Clear
+                            </button>
+                            <Link href={`/compare?projects=${selectedForComparison.join(',')}`}>
+                                <button className="px-4 py-1.5 text-xs bg-amber-500 text-black rounded-lg hover:bg-amber-400 transition-colors font-medium">
+                                    Compare
+                                </button>
+                            </Link>
+                        </div>
+                    </div>
+                )}
+
                 {/* Search + sort */}
                 <div className="flex flex-col sm:flex-row gap-3 mb-6">
                     <form onSubmit={handleSearch} className="flex gap-2 flex-1">
@@ -103,16 +155,23 @@ export default function GlobalProjects() {
                         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 mb-8">
                             {displayProjects.map((project) => (
                                 <div key={project.id}
-                                     className="bg-[#1C1C1A] rounded-2xl border border-stone-800 p-5 hover:border-amber-700/60 hover:bg-[#211f1d] transition-all flex flex-col">
+                                     className={`bg-[#1C1C1A] rounded-2xl border p-5 transition-all flex flex-col ${
+                                         selectedForComparison.includes(project.id)
+                                             ? 'border-amber-600 bg-amber-950/20'
+                                             : 'border-stone-800 hover:border-amber-700/60 hover:bg-[#211f1d]'
+                                     }`}>
                                     <div className="flex justify-between items-start mb-1">
                                         <h3 className="font-semibold text-stone-100 leading-snug flex-1 pr-3">{project.title}</h3>
-                                        <div className="text-right shrink-0">
-                                            <div className="flex items-center gap-0.5 justify-end">
-                                                <span className="text-sm font-semibold text-stone-200">{project.averageRating?.toFixed(1) || '—'}</span>
-                                                <span className="text-amber-400 text-sm">★</span>
-                                            </div>
-                                            <p className="text-xs text-stone-600">({project.totalRatings})</p>
-                                        </div>
+                                        <button
+                                            onClick={() => handleBookmarkToggle(project)}
+                                            className="shrink-0 ml-2 transition-colors"
+                                            title={isBookmarked(project.id) ? 'Remove bookmark' : 'Bookmark'}
+                                        >
+                                            <Heart
+                                                size={18}
+                                                className={isBookmarked(project.id) ? 'fill-amber-500 text-amber-500' : 'text-stone-500 hover:text-amber-400'}
+                                            />
+                                        </button>
                                     </div>
 
                                     <p className="text-xs text-stone-500 mb-3">{project.ownerName}</p>
@@ -141,16 +200,21 @@ export default function GlobalProjects() {
                                     )}
 
                                     <div className="flex gap-2 pt-3 border-t border-stone-800/60 mt-auto">
-                                        <Link href={`/projects/${project.id}`} className="flex-1">
+                                        <Link href={`/rate/${project.id}`} className="flex-1">
                                             <button className="w-full bg-stone-800 text-stone-300 px-3 py-2 rounded-xl text-xs font-medium hover:bg-stone-700 transition-colors">
                                                 Details
                                             </button>
                                         </Link>
-                                        <Link href={`/rate/${project.id}`} className="flex-1">
-                                            <button className="w-full bg-amber-500 text-black px-3 py-2 rounded-xl text-xs font-medium hover:bg-amber-400 transition-colors">
-                                                Rate
-                                            </button>
-                                        </Link>
+                                        <button
+                                            onClick={() => toggleComparison(project.id)}
+                                            className={`flex-1 px-3 py-2 rounded-xl text-xs font-medium transition-colors ${
+                                                selectedForComparison.includes(project.id)
+                                                    ? 'bg-amber-500 text-black hover:bg-amber-400'
+                                                    : 'bg-stone-800 text-stone-300 hover:bg-stone-700'
+                                            }`}
+                                        >
+                                            {selectedForComparison.includes(project.id) ? '✓ Compare' : 'Compare'}
+                                        </button>
                                     </div>
                                 </div>
                             ))}
